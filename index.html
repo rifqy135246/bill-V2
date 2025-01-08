@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .container h2 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .struk {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            background: #f9f9f9;
+        }
+        .struk p {
+            margin: 5px 0;
+        }
+        .struk h3 {
+            text-align: center;
+        }
+        .status {
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status.done {
+            color: green;
+        }
+        .status.failed {
+            color: red;
+        }
+        .copyright {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Buat Struk Belanja</h2>
+        <div class="form-group">
+            <label for="storeName">Nama Toko:</label>
+            <input type="text" id="storeName" placeholder="Masukkan nama toko">
+        </div>
+        <div class="form-group">
+            <label for="items">Barang yang Dibeli (format: Nama - Jumlah - Harga):</label>
+            <textarea id="items" placeholder="Contoh: Gula - 2 - 20000\nTepung - 1 - 15000"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="currency">Mata Uang:</label>
+            <select id="currency" onchange="updateCurrency()">
+                <option value="IDR" selected>Rupiah (IDR)</option>
+                <option value="USD">Dollar (USD)</option>
+                <option value="EUR">Euro (EUR)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="paymentMethod">Metode Pembayaran:</label>
+            <select id="paymentMethod">
+                <option value="paypal">PayPal</option>
+                <option value="va">Virtual Account (VA)</option>
+                <option value="dana">DANA</option>
+                <option value="gopay">GoPay</option>
+                <option value="pulsa">Pulsa</option>
+                <option value="ovo">OVO</option>
+                <option value="shopeepay">ShopeePay</option>
+                <option value="bank_transfer">Transfer Bank</option>
+                <option value="cash">Tunai</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="total">Total Harga:</label>
+            <input type="text" id="total" placeholder="Masukkan total harga">
+        </div>
+        <div class="form-group">
+            <label for="status">Status Pembayaran:</label>
+            <select id="status">
+                <option value="done">Sudah Dibayar ✅</option>
+                <option value="failed">Batal ❌</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="warranty">Garansi:</label>
+            <select id="warranty" onchange="toggleWarranty()">
+                <option value="no">Tidak Garansi ❌</option>
+                <option value="days">Hari</option>
+                <option value="weeks">Minggu</option>
+                <option value="months">Bulan</option>
+            </select>
+        </div>
+        <div class="form-group" id="warrantyTimeGroup" style="display: none;">
+            <label for="warrantyTime">Waktu Garansi:</label>
+            <input type="number" id="warrantyTime" placeholder="Masukkan durasi garansi">
+        </div>
+        <button class="btn" onclick="generateReceipt()">Buat Struk</button>
+
+        <div class="struk" id="receipt" style="display: none;"></div>
+    </div>
+
+    <div class="copyright">
+        &copy; 2025 Struk Belanja. All rights reserved.
+    </div>
+
+    <script>
+        function updateCurrency() {
+            const currency = document.getElementById('currency').value;
+            const totalInput = document.getElementById('total');
+
+            if (currency === 'USD') {
+                totalInput.placeholder = 'Masukkan total harga dalam USD';
+            } else if (currency === 'EUR') {
+                totalInput.placeholder = 'Masukkan total harga dalam EUR';
+            } else {
+                totalInput.placeholder = 'Masukkan total harga dalam IDR';
+            }
+        }
+
+        function toggleWarranty() {
+            const warranty = document.getElementById('warranty').value;
+            const warrantyTimeGroup = document.getElementById('warrantyTimeGroup');
+
+            if (warranty === 'no') {
+                warrantyTimeGroup.style.display = 'none';
+            } else {
+                warrantyTimeGroup.style.display = 'block';
+            }
+        }
+
+        function saveReceipt(data) {
+            localStorage.setItem('receipt', JSON.stringify(data));
+        }
+
+        function loadReceipt() {
+            const savedReceipt = localStorage.getItem('receipt');
+            if (savedReceipt) {
+                const receiptDiv = document.getElementById('receipt');
+                receiptDiv.innerHTML = JSON.parse(savedReceipt).html;
+                receiptDiv.style.display = 'block';
+            }
+        }
+
+        function generateReceipt() {
+            const storeName = document.getElementById('storeName').value;
+            const items = document.getElementById('items').value;
+            const total = document.getElementById('total').value;
+            const currency = document.getElementById('currency').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const status = document.getElementById('status').value;
+            const warranty = document.getElementById('warranty').value;
+            const warrantyTime = document.getElementById('warrantyTime').value;
+
+            if (!storeName || !items || !total) {
+                alert('Harap isi semua data!');
+                return;
+            }
+
+            const currencySymbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'Rp';
+
+            const paymentMethodText = {
+                paypal: 'PayPal',
+                va: 'Virtual Account (VA)',
+                dana: 'DANA',
+                gopay: 'GoPay',
+                pulsa: 'Pulsa',
+                ovo: 'OVO',
+                shopeepay: 'ShopeePay',
+                bank_transfer: 'Transfer Bank',
+                cash: 'Tunai'
+            }[paymentMethod];
+
+            const statusText = status === 'done' ? '<span class="status done">Sudah Dibayar ✅</span>' : '<span class="status failed">Batal ❌</span>';
+
+            let warrantyText = 'Tidak Garansi ❌';
+            if (warranty !== 'no') {
+                const warrantyUnit = warranty === 'days' ? 'Hari' : warranty === 'weeks' ? 'Minggu' : 'Bulan';
+                warrantyText = `${warrantyTime} ${warrantyUnit}`;
+            }
+
+            const receiptDiv = document.getElementById('receipt');
+            const receiptHTML = `
+                <h3>${storeName}</h3>
+                <p>=============================</p>
+                ${items.split('\n').map(item => `<p>${item}</p>`).join('')}
+                <p>Metode Pembayaran: ${paymentMethodText}</p>
+                <p>Status Pembayaran: ${statusText}</p>
+                <p>Garansi: ${warrantyText}</p>
+                <p>=============================</p>
+                <p><strong>Total: ${currencySymbol} ${total}</strong></p>
+                <p>Terima kasih sudah berbelanja!</p>
+            `;
+
+            receiptDiv.innerHTML = receiptHTML;
+            receiptDiv.style.display = 'block';
+
+            // Save receipt to localStorage
+            saveReceipt({ html: receiptHTML });
+        }
+
+        // Load receipt on page load
+        window.onload = loadReceipt;
+    </script>
+</body>
+</html>
